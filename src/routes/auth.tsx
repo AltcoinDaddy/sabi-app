@@ -2,8 +2,9 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
-import { Phone, ArrowRight, ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react'
-import { DEMO_OTP, getStoredPhone, setStoredPhone } from '@/lib/auth'
+import { Mail, ArrowRight, ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react'
+import { getStoredEmail, setStoredEmail } from '@/lib/auth'
+import { sendEmailOtpFn, verifyOtpFn } from '@/lib/server'
 
 export const Route = createFileRoute('/auth')({
   component: AuthScreen,
@@ -11,8 +12,8 @@ export const Route = createFileRoute('/auth')({
 
 function AuthScreen() {
   const navigate = useNavigate()
-  const [step, setStep] = useState<'phone' | 'otp'>('phone')
-  const [phone, setPhone] = useState('')
+  const [step, setStep] = useState<'email' | 'otp'>('email')
+  const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -20,8 +21,8 @@ function AuthScreen() {
 
   // If already signed in, skip the gate
   useEffect(() => {
-    const existing = getStoredPhone()
-    if (existing && existing.replace(/\D/g, '').length >= 10) {
+    const existing = getStoredEmail()
+    if (existing && existing.includes('@')) {
       navigate({ to: '/app' })
     }
   }, [navigate])
@@ -32,34 +33,50 @@ function AuthScreen() {
     return () => clearTimeout(t)
   }, [cooldown])
 
-  const phoneValid = phone.replace(/\D/g, '').length >= 10
+  const emailValid = email.includes('@') && email.length > 3
 
-  const handleSendCode = (e: React.FormEvent) => {
+  const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!phoneValid) return
+    if (!emailValid) return
     setLoading(true)
     setError(null)
-    setTimeout(() => {
+    
+    try {
+      const res = await sendEmailOtpFn({ data: { email } })
       setLoading(false)
-      setStep('otp')
-      setCooldown(30)
-    }, 700)
+      
+      if (res.success) {
+        setStep('otp')
+        setCooldown(30)
+      } else {
+        setError(res.error || 'Failed to send OTP')
+      }
+    } catch (err) {
+      setLoading(false)
+      setError('Network error.')
+    }
   }
 
-  const handleVerify = (e: React.FormEvent) => {
+  const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (otp.length !== 4) return
+    if (otp.length !== 6) return
     setLoading(true)
     setError(null)
-    setTimeout(() => {
+
+    try {
+      const res = await verifyOtpFn({ data: { email, code: otp } })
       setLoading(false)
-      if (otp === DEMO_OTP) {
-        setStoredPhone(phone.replace(/\D/g, ''))
+
+      if (res.success) {
+        setStoredEmail(email.trim().toLowerCase())
         navigate({ to: '/app' })
       } else {
-        setError(`That code didn't match. Hint: demo code is ${DEMO_OTP}.`)
+        setError(res.error || 'Invalid code.')
       }
-    }, 700)
+    } catch (err) {
+      setLoading(false)
+      setError('Network error.')
+    }
   }
 
   return (
@@ -67,40 +84,34 @@ function AuthScreen() {
       <div className="absolute top-0 left-0 w-full h-96 bg-sabi/10 blur-[120px] rounded-full pointer-events-none -translate-y-1/2" />
 
       <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full px-6 relative z-10">
-        {step === 'phone' ? (
+        {step === 'email' ? (
           <>
             <div className="mb-10 text-center">
-              <div className="w-16 h-16 bg-[#1c1c1f] border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(193,255,0,0.15)]">
-                <Phone className="w-8 h-8 text-sabi" />
+              <div className="w-16 h-16 bg-[#1c1c1f] border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                <Mail className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-3xl font-extrabold tracking-tight mb-3">What&apos;s your number?</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight mb-3">What&apos;s your email?</h1>
               <p className="text-white/60 font-medium text-sm leading-relaxed max-w-[300px] mx-auto">
-                No passwords. No emails. We&apos;ll text you a 4-digit code — and send your{' '}
-                <strong className="text-white">Cash &amp; Airtime</strong> prizes here when you win.
+                No passwords. We&apos;ll email you a 6-digit secure login code to enter the app.
               </p>
             </div>
 
             <form onSubmit={handleSendCode} className="flex flex-col gap-6">
               <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <span className="text-white/50 font-bold border-r border-white/10 pr-3">+234</span>
-                </div>
                 <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                  placeholder="801 234 5678"
-                  className="w-full bg-[#1c1c1f] border-2 border-white/5 text-white rounded-2xl h-16 pl-[84px] pr-4 text-lg font-bold outline-none focus:border-sabi transition-colors placeholder:text-white/20 shadow-inner"
-                  maxLength={11}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value.trim())}
+                  placeholder="name@example.com"
+                  className="w-full bg-[#1c1c1f] border-2 border-white/5 text-white rounded-2xl h-16 px-4 text-lg font-bold outline-none focus:ring-1 focus:ring-sabi transition-colors shadow-inner"
                   autoFocus
-                  inputMode="numeric"
                 />
               </div>
 
               <Button
-                disabled={!phoneValid || loading}
+                disabled={!emailValid || loading}
                 type="submit"
-                className="w-full h-16 bg-sabi hover:bg-white text-black text-lg font-bold rounded-2xl transition-all duration-300 disabled:opacity-50 disabled:bg-white/10 disabled:text-white/40 group"
+                className="w-full h-16 bg-sabi hover:bg-white text-black text-lg font-bold rounded-2xl transition-all duration-300 disabled:opacity-50 group"
               >
                 {loading ? (
                   <span className="animate-pulse">Sending code…</span>
@@ -122,36 +133,36 @@ function AuthScreen() {
           <>
             <button
               onClick={() => {
-                setStep('phone')
+                setStep('email')
                 setOtp('')
                 setError(null)
               }}
               className="flex items-center gap-2 text-sm font-semibold text-white/50 hover:text-white mb-8 w-fit"
             >
-              <ArrowLeft className="w-4 h-4" /> Change number
+              <ArrowLeft className="w-4 h-4" /> Change email
             </button>
 
             <div className="mb-8 text-center">
-              <div className="w-16 h-16 bg-[#1c1c1f] border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(193,255,0,0.15)]">
-                <KeyRound className="w-8 h-8 text-sabi" />
+              <div className="w-16 h-16 bg-[#1c1c1f] border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                <KeyRound className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-3xl font-extrabold tracking-tight mb-3">Enter your code</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight mb-3">Check your inbox</h1>
               <p className="text-white/60 font-medium text-sm leading-relaxed max-w-[300px] mx-auto">
-                We sent a 4-digit code to <strong className="text-white">+234 {phone}</strong>.
+                We sent a 6-digit code to <strong className="text-white">{email}</strong>.
               </p>
-              <p className="mt-3 inline-block text-xs font-bold text-black bg-sabi px-3 py-1.5 rounded-full">
-                DEMO CODE: {DEMO_OTP}
+              <p className="mt-3 inline-block text-xs font-bold text-white/50 border border-white/10 px-3 py-1.5 rounded-full">
+                Use <span className="text-white">123456</span> for local testing
               </p>
             </div>
 
             <form onSubmit={handleVerify} className="flex flex-col gap-6 items-center">
-              <InputOTP maxLength={4} value={otp} onChange={setOtp}>
-                <InputOTPGroup className="gap-3">
-                  {[0, 1, 2, 3].map((i) => (
+              <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                <InputOTPGroup className="gap-2">
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
                     <InputOTPSlot
                       key={i}
                       index={i}
-                      className="size-14 text-xl font-black rounded-2xl border-2 border-white/10 bg-[#1c1c1f] text-white data-[active=true]:border-sabi"
+                      className="size-12 text-xl font-black rounded-2xl border-2 border-white/10 bg-[#1c1c1f] text-white data-[active=true]:ring-2 data-[active=true]:ring-[#25D366]"
                     />
                   ))}
                 </InputOTPGroup>
@@ -164,9 +175,9 @@ function AuthScreen() {
               )}
 
               <Button
-                disabled={otp.length !== 4 || loading}
+                disabled={otp.length !== 6 || loading}
                 type="submit"
-                className="w-full h-16 bg-sabi hover:bg-white text-black text-lg font-bold rounded-2xl transition-all disabled:opacity-50 disabled:bg-white/10 disabled:text-white/40"
+                className="w-full h-16 bg-sabi hover:bg-white text-black text-lg font-bold rounded-2xl transition-all disabled:opacity-50"
               >
                 {loading ? <span className="animate-pulse">Verifying…</span> : 'Verify & Enter App'}
               </Button>

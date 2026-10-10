@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate, redirect } from '@tanstack/react-router'
 import { Home, Trophy, Megaphone, User, Plus, Search } from 'lucide-react'
 import { useEffect } from 'react'
-import { getStoredPhone, maskPhone } from '@/lib/auth'
+import { getStoredEmail, maskEmail } from '@/lib/auth'
 import { useSessionPoints, writeLocalPoints } from '@/lib/useSession'
 import { getMyStateFn } from '@/lib/server'
 
@@ -14,9 +14,9 @@ export const Route = createFileRoute('/app')({
       const cookie = document.cookie
         .split(';')
         .map((c) => c.trim())
-        .find((c) => c.startsWith('sabi_user_phone='))
-      const phone = cookie?.split('=').slice(1).join('=')
-      if (!phone || decodeURIComponent(phone).replace(/\D/g, '').length < 10) {
+        .find((c) => c.startsWith('sabi_user_email='))
+      const email = cookie?.split('=').slice(1).join('=')
+      if (!email || !decodeURIComponent(email).includes('@')) {
         throw redirect({ to: '/auth' })
       }
     }
@@ -26,17 +26,17 @@ export const Route = createFileRoute('/app')({
 
 function AppLayout() {
   const navigate = useNavigate()
-  const phone = getStoredPhone()
+  const email = getStoredEmail()
   const { points } = useSessionPoints()
 
   useEffect(() => {
-    if (!phone || phone.replace(/\D/g, '').length < 10) {
+    if (!email || !email.includes('@')) {
       navigate({ to: '/auth' })
       return
     }
     // Sync header balance with server truth on entry
     let cancelled = false
-    getMyStateFn({ data: { phone } })
+    getMyStateFn({ data: { email } })
       .then((s) => {
         if (!cancelled) writeLocalPoints(s.myPoints)
       })
@@ -44,7 +44,7 @@ function AppLayout() {
     return () => {
       cancelled = true
     }
-  }, [phone, navigate])
+  }, [email, navigate])
 
   return (
     <div className="min-h-screen bg-[#0d0d0f] text-white flex flex-col font-sans">
@@ -77,11 +77,11 @@ function AppLayout() {
           <Link
             to="/app/profile"
             className="h-10 px-3 rounded-full bg-[#1c1c1f] flex items-center gap-2 border border-white/5 text-white/70 hover:text-white"
-            title={phone ?? 'Profile'}
+            title={email ?? 'Profile'}
           >
             <User className="w-5 h-5" />
-            {phone && (
-              <span className="text-xs font-mono font-bold hidden sm:inline">{maskPhone(phone)}</span>
+            {email && (
+              <span className="text-xs font-mono font-bold hidden sm:inline">{maskEmail(email)}</span>
             )}
           </Link>
 

@@ -20,7 +20,7 @@ async function main() {
 
   // 2. Insert Users
   const userValues = Array.from({ length: 20 }).map((_, i) => ({
-    phoneNumber: `080${Math.floor(10000000 + Math.random() * 90000000)}`,
+    email: `player${i + 1}_${Math.floor(1000 + Math.random() * 9000)}@example.com`,
     role: i === 0 ? 'admin' : 'user', // first user is admin for demo
   }));
   const insertedUsers = await db.insert(schema.users).values(userValues).returning();

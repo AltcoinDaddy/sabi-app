@@ -14,7 +14,7 @@ const PRIZES = [
 /** PRD "Monday Results View" — first visit of each week settles last week. */
 export function ResultsModal() {
   const [open, setOpen] = useState(false)
-  const [rows, setRows] = useState<{ phone: string; points: number }[]>([])
+  const [rows, setRows] = useState<{ email: string; points: number }[]>([])
 
   useEffect(() => {
     const key = `sabi_results_seen_${weekKey()}`
@@ -36,7 +36,7 @@ export function ResultsModal() {
           } catch {}
           return
         }
-        setRows(played.map((e) => ({ phone: e.phoneNumber, points: e.points })))
+        setRows(played.map((e) => ({ email: (e as any).email || (e as any).phoneNumber, points: e.points })))
         setOpen(true)
       })
       .catch(() => {})
@@ -72,7 +72,7 @@ export function ResultsModal() {
               <div key={i} className="flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-4 py-3">
                 <div className="flex items-center gap-3">
                   <span className="font-mono font-bold text-sm text-white/80">
-                    {r.phone.slice(0, 4)}***{r.phone.slice(-3)}
+                    {r.email?.includes('@') ? (r.email.split('@')[0].length <= 2 ? `${r.email.split('@')[0]}***@${r.email.split('@')[1]}` : `${r.email.split('@')[0].slice(0, 2)}***@${r.email.split('@')[1]}`) : '***'}
                   </span>
                   <span className="text-[10px] font-black text-black bg-sabi px-2 py-0.5 rounded-full">#{i + 1}</span>
                 </div>

@@ -41,7 +41,7 @@ function LandingPage() {
       </nav>
 
       {/* Main Content */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 md:px-12 text-center pb-20 max-w-screen-xl mx-auto w-full mt-10">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 md:px-12 text-center pb-20 max-w-7xl mx-auto w-full mt-10">
         
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-extrabold leading-[1.1] tracking-tight mb-6 max-w-4xl mx-auto">
           Free to Play.<br />

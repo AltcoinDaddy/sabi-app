@@ -8,7 +8,7 @@ import { ChevronRight, Clock, Flame, Loader2, Lock, BadgeCheck, Info, Trophy } f
 import { useRouter } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
 import { pointsForPrediction, type Prediction } from '@/lib/scoring'
-import { getStoredPhone } from '@/lib/auth'
+import { getStoredEmail } from '@/lib/auth'
 import { readLocalPoints, writeLocalPoints } from '@/lib/useSession'
 import { getMyStateFn, submitPickFn } from '@/lib/server'
 import { TeamLogo } from '@/components/TeamLogo'
@@ -17,7 +17,7 @@ import { ResultsModal } from '@/components/ResultsModal'
 import { useNow, isLocked, formatCountdown, dayLabel, dayKey } from '@/lib/countdown'
 
 // Public data only — personal picks/points load client-side with the
-// signed-in phone so every number gets its own picks and points.
+// signed-in email so every number gets its own picks and points.
 const getFixturesData = createServerFn({ method: 'GET' }).handler(async () => {
   const allMatches = await db.select().from(matches)
   const allAds = await db.select().from(ads).where(eq(ads.active, true)).orderBy(desc(ads.id))
@@ -48,15 +48,15 @@ function FixturesScreen() {
   const [myRank, setMyRank] = useState(0)
   const [sheetMatchId, setSheetMatchId] = useState<number | null>(null)
 
-  // Load personal state for the signed-in phone
+  // Load personal state for the signed-in email
   useEffect(() => {
-    const phone = getStoredPhone()
-    if (!phone) {
+    const email = getStoredEmail()
+    if (!email) {
       setLoadingState(false)
       return
     }
     let cancelled = false
-    getMyStateFn({ data: { phone } })
+    getMyStateFn({ data: { email } })
       .then((s) => {
         if (cancelled) return
         setUserPicks(s.userPicks.map((p) => ({ matchId: p.matchId, predictedResult: p.predictedResult })))
@@ -73,7 +73,8 @@ function FixturesScreen() {
     }
   }, [])
 
-  const featuredAd = ads.find((a) => a.slotName === 'fixture_banner')
+  const featuredAd = ads.find((a) => a.slotName === 'featured_spot')
+  const bannerAd = ads.find((a) => a.slotName === 'fixture_banner')
   const picksByMatch = useMemo(() => new Map(userPicks.map((p) => [p.matchId, p])), [userPicks])
   const pickedCount = picksByMatch.size
   const openCount = useMemo(() => matches.filter((m) => !isLocked(m.kickoffTime, now)).length, [matches, now])
@@ -105,15 +106,15 @@ function FixturesScreen() {
   }, [sheetMatchId, matches])
 
   const handlePick = async (matchId: number, prediction: Prediction) => {
-    const phone = getStoredPhone()
-    if (!phone) {
+    const email = getStoredEmail()
+    if (!email) {
       setNotice('Sign in again to make picks.')
       return
     }
     setLoadingPick(`${matchId}-${prediction}`)
     setNotice(null)
     try {
-      const res = await submitPickFn({ data: { phone, matchId, prediction } })
+      const res = await submitPickFn({ data: { email, matchId, prediction } })
       if (!res.success) {
         setNotice('That match is locked — picks close at kickoff.')
         return
@@ -183,7 +184,7 @@ function FixturesScreen() {
       </section>
 
       {earnedFlash && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[60] bg-sabi text-black font-black text-sm px-5 py-2.5 rounded-full shadow-[0_0_30px_rgba(193,255,0,0.5)] animate-bounce">
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-60 bg-sabi text-black font-black text-sm px-5 py-2.5 rounded-full shadow-[0_0_30px_rgba(193,255,0,0.5)] animate-bounce">
           {earnedFlash} earned!
         </div>
       )}
@@ -196,7 +197,7 @@ function FixturesScreen() {
 
       {/* Featured Ad */}
       {featuredAd && (
-        <a href={featuredAd.link} target="_blank" rel="noreferrer" className="block w-full relative rounded-[28px] overflow-hidden group cursor-pointer bg-sabi h-44 flex shadow-lg">
+        <a href={featuredAd.link} target="_blank" rel="noreferrer" className="w-full relative rounded-[28px] overflow-hidden group cursor-pointer bg-sabi h-44 flex shadow-lg">
           <div className="absolute top-2 left-3 bg-black/60 backdrop-blur px-2 py-0.5 rounded text-[10px] uppercase font-bold text-white/80 z-10">
             Ad
           </div>
@@ -324,6 +325,19 @@ function FixturesScreen() {
             </div>
           </section>
         ))}
+
+        {/* Fixture Banner Ad */}
+        {bannerAd && (
+          <a href={bannerAd.link} target="_blank" rel="noreferrer" className="block w-full relative rounded-2xl overflow-hidden group border border-white/10 bg-[#1c1c1f]">
+            <div className="absolute top-2 right-2 bg-black/60 backdrop-blur px-2 py-0.5 rounded text-[10px] uppercase font-bold text-white/80 z-10">Ad</div>
+            <div className="h-28 w-full relative">
+              <img src={bannerAd.imageUrl} alt="Ad" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+            </div>
+            <div className="p-3 bg-black">
+              <p className="text-sm font-bold text-white group-hover:text-sabi transition-colors">{bannerAd.text}</p>
+            </div>
+          </a>
+        )}
       </div>
 
       {/* Pick-slip bar */}

@@ -1,4 +1,4 @@
-export const AUTH_COOKIE = "sabi_user_phone";
+export const AUTH_COOKIE = "sabi_user_email";
 export const POINTS_KEY = "sabi_points_v1";
 export const PICKS_KEY = "sabi_picks_v1";
 
@@ -27,23 +27,23 @@ export function clearCookie(name: string) {
   document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
 }
 
-export function getStoredPhone(): string | null {
+export function getStoredEmail(): string | null {
   const fromCookie = getCookie(AUTH_COOKIE);
   if (fromCookie) return fromCookie;
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(AUTH_COOKIE);
 }
 
-export function setStoredPhone(phone: string) {
-  setCookie(AUTH_COOKIE, phone);
+export function setStoredEmail(email: string) {
+  setCookie(AUTH_COOKIE, email);
   try {
-    window.localStorage.setItem(AUTH_COOKIE, phone);
+    window.localStorage.setItem(AUTH_COOKIE, email);
   } catch {
     /* noop */
   }
 }
 
-export function clearStoredPhone() {
+export function clearStoredEmail() {
   clearCookie(AUTH_COOKIE);
   try {
     window.localStorage.removeItem(AUTH_COOKIE);
@@ -53,18 +53,19 @@ export function clearStoredPhone() {
 }
 
 export function isAuthenticated(): boolean {
-  const phone = getStoredPhone();
-  return !!phone && phone.replace(/\D/g, "").length >= 10;
+  const email = getStoredEmail();
+  return !!email && email.includes('@');
 }
 
-export function maskPhone(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length < 7) return phone;
-  return `${digits.slice(0, 4)}***${digits.slice(-3)}`;
+export function maskEmail(email: string): string {
+  if (!email || !email.includes('@')) return email;
+  const [user, domain] = email.split('@');
+  if (user.length <= 2) return `${user}***@${domain}`;
+  return `${user.slice(0, 2)}***@${domain}`;
 }
 
-export function normalizePhone(phone: string): string {
-  return phone.replace(/\D/g, "").slice(-11);
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
 }
 
 /** Mock OTP for prototype — in production this comes via SMS. */
