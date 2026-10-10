@@ -43,11 +43,6 @@ function LandingPage() {
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 md:px-12 text-center pb-20 max-w-screen-xl mx-auto w-full mt-10">
         
-        <div className="inline-flex items-center justify-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-md">
-          <span className="flex h-2 w-2 rounded-full bg-sabi animate-pulse"></span>
-          <span className="text-xs font-bold uppercase tracking-widest text-white/80">Season 1 is Live</span>
-        </div>
-        
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-extrabold leading-[1.1] tracking-tight mb-6 max-w-4xl mx-auto">
           Free to Play.<br />
           <span className="text-transparent bg-clip-text bg-linear-to-b from-white to-white/40">No Deposit</span><br />
@@ -80,10 +75,6 @@ function LandingPage() {
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-sabi" />
             <span>Instant Prize Payouts</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-sabi" />
-            <span>Dynamic ₦20k+ Pot</span>
           </div>
         </div>
 

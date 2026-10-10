@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
-import { Crown, Medal, Banknote, Smartphone } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Crown, Medal, Banknote, Smartphone, MapPin } from 'lucide-react'
 import { SabiLoader } from '@/components/SabiLoader'
 import { getBoardFn } from '@/lib/server'
 import { getStoredPhone } from '@/lib/auth'
+import { readLocalPoints } from '@/lib/useSession'
 
 export const Route = createFileRoute('/app/leaderboard')({
   component: LeaderboardScreen,
@@ -20,8 +21,15 @@ function prizeFor(rank: number) {
 function LeaderboardScreen() {
   const { entries, season, ad } = Route.useLoaderData()
   const [tab, setTab] = useState<'weekly' | 'season'>('weekly')
+  const [me, setMe] = useState<{ digits: string; pts: number } | null>(null)
+  useEffect(() => {
+    const digits = (getStoredPhone() ?? '').replace(/\D/g, '').slice(-11)
+    if (digits.length >= 10) setMe({ digits, pts: readLocalPoints() })
+  }, [])
   const rows = tab === 'weekly' ? entries : season
-  const myDigits = (getStoredPhone() ?? '').replace(/\D/g, '').slice(-11)
+  const myDigits = me?.digits ?? ''
+  const onBoard = myDigits.length >= 10 && entries.some((e) => e.phoneNumber.replace(/\D/g, '').slice(-11) === myDigits)
+  const myRank = me ? entries.filter((e) => e.points > me.pts).length + 1 : 0
 
   return (
     <div className="p-4 flex flex-col gap-6">
@@ -31,6 +39,18 @@ function LeaderboardScreen() {
         <span className="text-4xl font-extrabold tracking-tight">₦20,000*</span>
         <span className="text-xs font-semibold opacity-60 mt-1">1st = Cash · 2nd–10th = Airtime/Data</span>
       </div>
+
+      {/* Your position — pinned when outside the visible list */}
+      {me && !onBoard && (
+        <div className="bg-sabi/10 border border-sabi/40 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-[0_0_20px_rgba(193,255,0,0.12)]">
+          <MapPin className="w-5 h-5 text-sabi shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-extrabold">You · Rank #{myRank}</p>
+            <p className="text-[11px] font-semibold text-white/50">Make picks to climb into the prize zone</p>
+          </div>
+          <span className="font-black text-sabi tabular-nums">{me.pts} <span className="text-[10px] text-white/50">PTS</span></span>
+        </div>
+      )}
 
       {/* Takeover Ad */}
       {ad && (
