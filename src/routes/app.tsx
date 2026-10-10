@@ -54,7 +54,7 @@ function AppLayout() {
         {/* Logo */}
         <Link to="/app" className="flex items-center">
           <span className="font-extrabold text-2xl tracking-tighter italic">
-            SAB<span className="text-sabi">I</span>
+            SabiPredict
           </span>
         </Link>
 

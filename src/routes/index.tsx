@@ -23,7 +23,7 @@ function LandingPage() {
             <div className="absolute inset-0 bg-sabi blur-md opacity-50 group-hover:opacity-100 transition-opacity rounded-full"></div>
             <Trophy className="text-sabi h-8 w-8 relative z-10 drop-shadow-[0_0_10px_rgba(193,255,0,0.8)]" />
           </div>
-          <span className="tracking-tight text-white">Sabi</span>
+          <span className="tracking-tight text-white">SabiPredict</span>
         </div>
         
         <div className="hidden lg:flex items-center gap-10 text-sm font-semibold tracking-wide">
