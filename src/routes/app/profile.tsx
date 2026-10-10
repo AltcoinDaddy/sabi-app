@@ -113,7 +113,7 @@ function ProfileScreen() {
                   type="number" 
                   value={withdrawAmount}
                   onChange={(e) => setWithdrawAmount(Math.min(me.withdrawableBalance, Number(e.target.value)))}
-                  className="w-full bg-transparent border-b-2 border-white/20 h-16 text-4xl text-white outline-none focus:border-white transition-colors"
+                  className="w-full bg-transparent border-b-2 border-white/20 h-16 text-4xl text-white outline-none focus:border-t-transparent transition-colors"
                 />
               </div>
               <button 
@@ -171,7 +171,7 @@ function ProfileScreen() {
                     withdrawMethod === 'AIRTIME' ? "Phone Number" :
                     "0x... Wallet Address"
                   }
-                  className="w-full bg-[#1c1c1f] border border-white/20 h-12 px-4 text-white text-sm outline-none focus:border-white transition-colors font-mono"
+                  className="w-full bg-[#1c1c1f] border border-white/20 h-12 px-4 text-white text-sm outline-none focus:border-t-transparent transition-colors font-mono"
                 />
               </div>
               <button 

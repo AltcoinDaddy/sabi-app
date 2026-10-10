@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import { db } from '@/db'
-import { ads, matches, picks, users, weeklyPots } from '@/db/schema'
+import { ads, matches, picks, weeklyPots } from '@/db/schema'
 import { and, desc, eq, sql } from 'drizzle-orm'
 import { getCurrentIsoWeek, getCurrentSeason, needEmail } from './utils'
 import { ensureUser } from './auth'
