@@ -35,9 +35,28 @@ export const processWithdrawalFn = createServerFn({ method: 'POST' })
       // 3. Simulate Gateway Interaction based on method
       console.log(`[Withdrawal Gateway] Processing ₦${data.amount} via ${data.method} to ${data.destination}`)
       
-      // In reality, this would listen for a webhook. For now, mark COMPLETED.
-      // If it failed, we would refund the balance and mark FAILED.
-      await db.update(withdrawals).set({ status: 'COMPLETED' }).where(eq(withdrawals.id, withdrawalId))
+      const apiKey = process.env.BACHS_API_KEY || 'sk_sandbox_mock_key'
+      
+      if (data.method === 'BANK' || data.method === 'MOMO') {
+        // Trigger Bachs API
+        await fetch('https://sandbox-api.bachs.io/v1/payouts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+          body: JSON.stringify({
+            amount: data.amount,
+            currency: 'NGN',
+            destination: { type: 'bank_account', account_number: data.destination, bank_code: '044' }, // Bank code normally derived
+            reference: `payout_${withdrawalId}`,
+            narration: 'Sabi App Weekly Prize'
+          })
+        })
+        
+        // Wait for webhook to finalize status
+        await db.update(withdrawals).set({ status: 'PROCESSING' }).where(eq(withdrawals.id, withdrawalId))
+      } else {
+        // For non-Bachs routes like Crypto/Airtime, we just mark COMPLETED immediately for now
+        await db.update(withdrawals).set({ status: 'COMPLETED' }).where(eq(withdrawals.id, withdrawalId))
+      }
       
       return { success: true as const, message: 'Withdrawal processed successfully' }
     } catch (e) {
